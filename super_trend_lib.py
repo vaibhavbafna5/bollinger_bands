@@ -6,10 +6,20 @@ import pickle
 import numpy as np
 import json
 from pathlib import Path
+import chart_studio.plotly as py
+from chart_studio.tools import set_credentials_file
 
 # TODO: turn these into env variables
 ACCOUNT_SID = 'AC1c8609d08e6779e453af78b81ded8c9b'
 AUTH_TOKEN = '6192e654cdd8b5bbf777861a784e7b7e'
+
+PLOTLY_USERNAME = 'vbafna'
+PLOTLY_API_KEY = 'l91yXKPxULoefRPT4MSs'
+
+set_credentials_file(
+    username=PLOTLY_USERNAME,
+    api_key=PLOTLY_API_KEY,
+)
 
 class NpEncoder(json.JSONEncoder):
     # used to help dump data safely
@@ -24,8 +34,9 @@ class NpEncoder(json.JSONEncoder):
 
 class SuperTrendRunner():
 
-    def __init__(self, ticker, debug_mode=False, multiplier=3.5, rolling_period=10, initial_amount=10000):
+    def __init__(self, ticker, json_path, debug_mode=False, multiplier=3.5, rolling_period=10, initial_amount=10000,):
         self.ticker = ticker
+        self.json_path = json_path
         self.multiplier = multiplier
         self.rolling_period = rolling_period
         self.initial_amount = initial_amount
@@ -237,8 +248,9 @@ class SuperTrendRunner():
             line=dict(color='pink')
         )
 
+        data = [candlestick, final_upper_band_line, final_lower_band_line, super_trend_line, buy_line, sell_line]
         fig = go.Figure(
-            data=[candlestick, final_upper_band_line, final_lower_band_line, super_trend_line, buy_line, sell_line]
+            data=data,
         )
         
         fig.update_layout(
@@ -446,7 +458,7 @@ class SuperTrendRunner():
         last_row_as_dict = last_row.to_dict()
         last_row_time = str(last_row.name.date())
         
-        base = Path(f'/Users/vaibhav/projects/super_trend/{self.ticker}')
+        base = Path(f'{self.json_path}/{self.ticker}')
         jsonpath = base / (last_row_time + ".json")
         base.mkdir(exist_ok=True)
         jsonpath.write_text(json.dumps(last_row_as_dict, cls=NpEncoder))

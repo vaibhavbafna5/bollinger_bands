@@ -1,11 +1,21 @@
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
+import chart_studio.plotly as py
+from chart_studio.tools import set_credentials_file
 from twilio.rest import Client
 import pickle
 import numpy as np
 import json
 from pathlib import Path
+
+PLOTLY_USERNAME = 'vbafna'
+PLOTLY_API_KEY = 'l91yXKPxULoefRPT4MSs'
+
+set_credentials_file(
+    username=PLOTLY_USERNAME,
+    api_key=PLOTLY_API_KEY,
+)
 
 ACCOUNT_SID = 'AC1c8609d08e6779e453af78b81ded8c9b'
 AUTH_TOKEN = '6192e654cdd8b5bbf777861a784e7b7e'
@@ -199,16 +209,28 @@ def chart_super_trend(super_trend_df):
         line=dict(color='pink')
     )
 
+    data = [candlestick, final_upper_band_line, final_lower_band_line, super_trend_line, buy_line, sell_line]
+
     fig = go.Figure(
-        data=[candlestick, final_upper_band_line, final_lower_band_line, super_trend_line, buy_line, sell_line]
+        data=data
     )
     
     fig.update_layout(
         autosize=False,
         width=1200,
         height=800,)
+    
+    chart = py.plot(
+        fig,
+        filename='merpmerp',
+        auto_open=False,
+        fileopt='overwrite',
+        sharing='public'
+    )
 
-    fig.show()
+    print('YO BITCH: ', chart)
+
+    # fig.show()
 
 def simulate_portfolio_on_strategy(super_trend_df, initial_amt=INITIAL_AMOUNT):
     portfolio_vals = [initial_amt]
