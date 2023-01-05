@@ -82,7 +82,7 @@ class SuperTrendRunner():
 
         return super_trend_df
 
-    def generate_super_trend_for_ticker(self, period="max"):
+    def generate_super_trend_for_ticker(self, period="6mo"):
         ticker_data = yf.Ticker(self.ticker).history(period=period)
         
         # calculate high low 
