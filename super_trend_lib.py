@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import chart_studio.plotly as py
 from chart_studio.tools import set_credentials_file
+import pymongo
 
 # TODO: turn these into env variables
 ACCOUNT_SID = 'AC1c8609d08e6779e453af78b81ded8c9b'
@@ -15,6 +16,8 @@ AUTH_TOKEN = '6192e654cdd8b5bbf777861a784e7b7e'
 
 PLOTLY_USERNAME = 'vbafna'
 PLOTLY_API_KEY = 'l91yXKPxULoefRPT4MSs'
+
+MONGO_URL = "mongodb+srv://new_user:new_user@super-trend.xltbo.mongodb.net/?retryWrites=true&w=majority"
 
 set_credentials_file(
     username=PLOTLY_USERNAME,
@@ -34,7 +37,13 @@ class NpEncoder(json.JSONEncoder):
 
 class SuperTrendRunner():
 
-    def __init__(self, ticker, json_path, debug_mode=False, multiplier=3.5, rolling_period=10, initial_amount=10000,):
+    """
+    Architecture:
+    - initialization function to generate the initial super trend & upload to Mongo
+    - runner function that runs daily to generate message
+    """
+
+    def __init__(self, ticker, json_path, debug_mode=False, multiplier=2.5, rolling_period=14, initial_amount=10000,):
         self.ticker = ticker
         self.json_path = json_path
         self.multiplier = multiplier
@@ -73,9 +82,8 @@ class SuperTrendRunner():
 
         return super_trend_df
 
-    def generate_super_trend_for_ticker(self):
-        ticker_data = yf.Ticker(self.ticker).history(period="max")
-        # ticker_data = ticker_data.loc[start_date:]
+    def generate_super_trend_for_ticker(self, period="max"):
+        ticker_data = yf.Ticker(self.ticker).history(period=period)
         
         # calculate high low 
         ticker_data = self.generate_average_true_range(ticker_data)
@@ -149,19 +157,23 @@ class SuperTrendRunner():
             current_final_lower_band = final_lower_band[-1]
 
             if previous_super_trend == previous_final_upper_band and current_close < current_final_upper_band:
-                buy_or_sell.append(False)
+                bs = False
+                buy_or_sell.append(bs)
                 super_trend.append(current_final_upper_band)
 
             elif previous_super_trend == previous_final_upper_band and current_close > current_final_upper_band:
-                buy_or_sell.append(True)
+                bs = True
+                buy_or_sell.append(bs)
                 super_trend.append(current_final_lower_band)
 
             elif previous_super_trend == previous_final_lower_band and current_close > current_final_lower_band:
-                buy_or_sell.append(True)
+                bs = True
+                buy_or_sell.append(bs)
                 super_trend.append(current_final_lower_band)
 
             elif previous_super_trend == previous_final_lower_band and current_close < current_final_lower_band:
-                buy_or_sell.append(False)
+                bs = False
+                buy_or_sell.append(bs)
                 super_trend.append(current_final_upper_band)
 
         ticker_data['super_trend'] = super_trend
@@ -272,6 +284,7 @@ class SuperTrendRunner():
             previous = i - 1
             current_trade = super_trend_df.iloc[current]['buy_or_sell']
             previous_trade = super_trend_df.iloc[previous]['buy_or_sell']
+            raw_percent_difference = 0
             
             # buy order
             if previous_trade == False and current_trade == True:
@@ -279,15 +292,15 @@ class SuperTrendRunner():
                 
             # sell order
             elif previous_trade == True and current_trade == False:
+                previous_price = super_trend_df.iloc[previous]['Close']
+                current_price = super_trend_df.iloc[current]['Close']
+                raw_percent_difference = ((current_price - previous_price) / current_price)
                 buying = False
                 
-            raw_percent_difference = 0
             if buying:
                 previous_price = super_trend_df.iloc[previous]['Close']
                 current_price = super_trend_df.iloc[current]['Close']
                 raw_percent_difference = ((current_price - previous_price) / current_price)
-            else:
-                raw_percent_difference = 0
                 
             percent_difference = 1 + raw_percent_difference
             initial_amt = initial_amt * percent_difference
@@ -463,3 +476,78 @@ class SuperTrendRunner():
         base.mkdir(exist_ok=True)
         jsonpath.write_text(json.dumps(last_row_as_dict, cls=NpEncoder))
         print(last_row_as_dict)
+
+    def initialize_dataframe(self):
+        super_trend_df = self.generate_super_trend_for_ticker()
+
+        start_date = super_trend_df.iloc[0].name
+        end_date = super_trend_df.iloc[-1].name
+
+        print(f"generating super trend for {self.ticker} starting {start_date} and ending {end_date}")
+
+        portfolio_over_time, percent_differences = self.simulate_portfolio_on_strategy(super_trend_df)
+        super_trend_df['portfolio_values'] = portfolio_over_time
+        super_trend_df['percentage_change'] = percent_differences
+
+        return super_trend_df
+
+    def write_initial_dataframe_to_mongo(self, super_trend_df):
+        client = pymongo.MongoClient(MONGO_URL)
+        db = client['super-trend']
+
+        if self.ticker not in db.list_collection_names():
+            print(f"{self.ticker} is not a collection in DB")
+            return
+
+        collection = db[self.ticker]
+
+        super_trend_df.reset_index(inplace=True)
+        values = list(super_trend_df.T.to_dict().values())
+        collection.insert_many(values)
+
+    def execute_daily_trade_decision(self):
+        super_trend_df = self.generate_daily_super_trend()
+        trade_decision = self.get_trade_decision(super_trend_df)
+        print("trade decision: ", trade_decision)
+
+        if not self.debug_mode:
+            self.write_trade_decision_to_mongo(super_trend_df)
+            self.send_trade_decision(trade_decision)
+
+    def generate_daily_super_trend(self):
+        super_trend_df = self.generate_super_trend_for_ticker(period="6mo")
+        portfolio_over_time, percent_differences = self.simulate_portfolio_on_strategy(super_trend_df)
+        super_trend_df['portfolio_values'] = portfolio_over_time
+        super_trend_df['percentage_change'] = percent_differences
+
+        return super_trend_df
+
+    def write_trade_decision_to_mongo(self, super_trend_df):
+        super_trend_df.reset_index(inplace=True)
+        last_row = super_trend_df.iloc[-1].to_dict()
+
+        client = pymongo.MongoClient(MONGO_URL)
+        db = client['super-trend']
+
+        if self.ticker not in db.list_collection_names():
+            print(f"{self.ticker} is not a collection in DB")
+            return
+
+        collection = db[self.ticker]
+        collection.insert_one(last_row)
+
+    def read_trade_data_from_mongo_to_dataframe(self):
+        client = pymongo.MongoClient(MONGO_URL)
+        db = client['super-trend']
+
+        if self.ticker not in db.list_collection_names():
+            print(f"{self.ticker} is not a collection in DB")
+            return
+
+        collection = db[self.ticker]
+        cursor = collection.find()
+        list_cur = list(cursor)
+
+        df = pd.DataFrame(list_cur)
+        return df
+        
