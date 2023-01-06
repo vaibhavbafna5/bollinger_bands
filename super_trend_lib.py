@@ -540,7 +540,7 @@ class SuperTrendRunner():
 
         if not self.debug_mode:
             self.write_trade_decision_to_mongo(super_trend_df)
-            self.send_trade_decision(trade_decision)
+            self.send_trade_decision_via_email(trade_decision)
 
     def generate_daily_super_trend(self):
         super_trend_df = self.generate_super_trend_for_ticker(period="6mo")
