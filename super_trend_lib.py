@@ -9,6 +9,11 @@ from pathlib import Path
 import chart_studio.plotly as py
 from chart_studio.tools import set_credentials_file
 import pymongo
+import os
+import smtplib, ssl
+from email.message import EmailMessage
+
+EMAIL_PW = os.environ.get('EMAIL_PW')
 
 # TODO: turn these into env variables
 ACCOUNT_SID = 'AC1c8609d08e6779e453af78b81ded8c9b'
@@ -464,6 +469,29 @@ class SuperTrendRunner():
             body=trade_decision,
         )
         print(message.sid)
+
+    def send_trade_decision_via_email(self, trade_decision):
+        receiver_email = "vbafna@umich.edu"
+        sender_email = "vbafna@umich.edu"
+        password = EMAIL_PW
+
+        port = 587
+        smtp_server = "smtp.gmail.com"
+
+        msg = EmailMessage()
+        body = ""
+        msg.set_content(body)
+
+        msg['Subject'] = trade_decision
+        msg['From'] = sender_email
+        msg['To'] = receiver_email
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_server, port) as server:
+            server.ehlo()
+            server.starttls(context=context)
+            server.login(sender_email, password)
+            server.send_message(msg)
 
     def write_last_row_to_disk(self, super_trend_df):
         last_row = super_trend_df.iloc[-1]
