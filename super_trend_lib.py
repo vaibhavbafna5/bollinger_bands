@@ -473,7 +473,7 @@ class SuperTrendRunner():
     def send_trade_decision_via_email(self, trade_decision):
         receiver_email = "vbafna@umich.edu"
         sender_email = "vbafna@umich.edu"
-        password = EMAIL_PW
+        password = '@Collingsworth5'
 
         port = 587
         smtp_server = "smtp.gmail.com"
