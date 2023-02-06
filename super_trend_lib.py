@@ -13,6 +13,8 @@ import os
 import smtplib, ssl
 from email.message import EmailMessage
 
+from collections import deque
+
 EMAIL_PW = os.environ.get('EMAIL_PW')
 
 # TODO: turn these into env variables
@@ -41,7 +43,6 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 class SuperTrendRunner():
-
     """
     Architecture:
     - initialization function to generate the initial super trend & upload to Mongo
@@ -299,13 +300,13 @@ class SuperTrendRunner():
             elif previous_trade == True and current_trade == False:
                 previous_price = super_trend_df.iloc[previous]['Close']
                 current_price = super_trend_df.iloc[current]['Close']
-                raw_percent_difference = ((current_price - previous_price) / current_price)
+                raw_percent_difference = ((current_price - previous_price) / previous_price)
                 buying = False
                 
             if buying:
                 previous_price = super_trend_df.iloc[previous]['Close']
                 current_price = super_trend_df.iloc[current]['Close']
-                raw_percent_difference = ((current_price - previous_price) / current_price)
+                raw_percent_difference = ((current_price - previous_price) / previous_price)
                 
             percent_difference = 1 + raw_percent_difference
             initial_amt = initial_amt * percent_difference
@@ -314,6 +315,65 @@ class SuperTrendRunner():
             portfolio_vals.append(initial_amt)
                 
         return portfolio_vals, percent_differences
+
+    def simulate_portfolio_strategy_with_slippage(self, super_trend_df, buy_slippage=1, sell_slippage=1):
+        buying_periods = deque()
+        current_day = 1
+        previous_day = 0
+
+        portfolio_vals = [self.initial_amount]
+        initial_amt = self.initial_amount
+
+        while current_day != len(super_trend_df.index):
+            previous_day_row = super_trend_df.iloc[previous_day]
+            current_day_row = super_trend_df.iloc[current_day]
+
+            previous_price = previous_day_row['Close']
+            current_price = current_day_row['Close']
+
+            # buying
+            if current_day_row['buy_or_sell'] == True and previous_day_row['buy_or_sell'] == False:
+                buying_periods.append([current_day, -1])
+
+            # selling
+            elif current_day_row['buy_or_sell'] == False and previous_day_row['buy_or_sell'] == True:
+                buying_periods[-1][1] = current_day
+
+            previous_day += 1
+            current_day += 1
+
+        # adjusting the day bought/sold to account for slippage (e.g being late on buys/sells)
+        for bp in buying_periods:
+            bp[0] += buy_slippage
+            bp[1] += sell_slippage
+
+        # calculating percentage/price differentials by day 
+        i = 1
+        bp = buying_periods.popleft() if buying_periods else None
+        percentage_differences = [0.0]
+
+        while i != len(super_trend_df.index):
+            raw_percentage = 0
+            if bp:
+                if i < bp[0]:
+                    raw_percentage = 0
+                elif bp[0] <= i <= bp[1]:
+                    previous_price = super_trend_df.iloc[i - 1]['Close']
+                    current_price = super_trend_df.iloc[i]['Close']
+                    raw_percentage = ((current_price - previous_price) / previous_price)
+                elif i > bp[0]:
+                    bp = buying_periods.popleft() if buying_periods else None
+
+            percentage_difference = 1 + raw_percentage
+            initial_amt = initial_amt * percentage_difference
+
+            percentage_differences.append(percentage_difference)
+            portfolio_vals.append(initial_amt)
+
+            i += 1
+
+        return portfolio_vals, percentage_differences
+        
 
     def benchmark_strategy(self, super_trend_df, benchmark_ticker='VTI'):
         start_date = super_trend_df.iloc[0].name
@@ -505,8 +565,8 @@ class SuperTrendRunner():
         jsonpath.write_text(json.dumps(last_row_as_dict, cls=NpEncoder))
         print(last_row_as_dict)
 
-    def initialize_dataframe(self):
-        super_trend_df = self.generate_super_trend_for_ticker()
+    def initialize_dataframe(self, period="6mo"):
+        super_trend_df = self.generate_super_trend_for_ticker(period)
 
         start_date = super_trend_df.iloc[0].name
         end_date = super_trend_df.iloc[-1].name
@@ -542,8 +602,8 @@ class SuperTrendRunner():
             self.write_trade_decision_to_mongo(super_trend_df)
             self.send_trade_decision_via_email(trade_decision)
 
-    def generate_daily_super_trend(self):
-        super_trend_df = self.generate_super_trend_for_ticker(period="6mo")
+    def generate_daily_super_trend(self, period="6mo"):
+        super_trend_df = self.generate_super_trend_for_ticker(period=period)
         portfolio_over_time, percent_differences = self.simulate_portfolio_on_strategy(super_trend_df)
         super_trend_df['portfolio_values'] = portfolio_over_time
         super_trend_df['percentage_change'] = percent_differences
