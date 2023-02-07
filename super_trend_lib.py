@@ -1,35 +1,23 @@
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
-from twilio.rest import Client
-import pickle
 import numpy as np
 import json
-from pathlib import Path
-import chart_studio.plotly as py
-from chart_studio.tools import set_credentials_file
 import pymongo
 import os
 import smtplib, ssl
-from email.message import EmailMessage
 
+from pathlib import Path
+from email.message import EmailMessage
+from dotenv import load_dotenv
 from collections import deque
 
-EMAIL_PW = os.environ.get('EMAIL_PW')
+load_dotenv()
 
-# TODO: turn these into env variables
-ACCOUNT_SID = 'AC1c8609d08e6779e453af78b81ded8c9b'
-AUTH_TOKEN = '6192e654cdd8b5bbf777861a784e7b7e'
-
-PLOTLY_USERNAME = 'vbafna'
-PLOTLY_API_KEY = 'l91yXKPxULoefRPT4MSs'
-
-MONGO_URL = "mongodb+srv://new_user:new_user@super-trend.xltbo.mongodb.net/?retryWrites=true&w=majority"
-
-set_credentials_file(
-    username=PLOTLY_USERNAME,
-    api_key=PLOTLY_API_KEY,
-)
+EMAIL_PW = os.environ.get('EMAIL_PASSWORD')
+RECEIVER_EMAIL = os.environ.get('RECEIVER_EMAIL')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL')
+MONGO_URL = os.environ.get('MONGO_URL')
 
 class NpEncoder(json.JSONEncoder):
     # used to help dump data safely
@@ -521,20 +509,7 @@ class SuperTrendRunner():
         last_trading_day_date = str(last_trading_day.name.date())
         return msg + " " + last_trading_day_date
 
-    def send_trade_decision(self, trade_decision):
-        client = Client(ACCOUNT_SID, AUTH_TOKEN)
-        message=client.messages.create(
-            to="+18642023343",
-            from_="+19107086138",
-            body=trade_decision,
-        )
-        print(message.sid)
-
     def send_trade_decision_via_email(self, trade_decision):
-        receiver_email = "vbafna@umich.edu"
-        sender_email = "vbafna@umich.edu"
-        password = '@Collingsworth5'
-
         port = 587
         smtp_server = "smtp.gmail.com"
 
@@ -543,14 +518,14 @@ class SuperTrendRunner():
         msg.set_content(body)
 
         msg['Subject'] = trade_decision
-        msg['From'] = sender_email
-        msg['To'] = receiver_email
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = RECEIVER_EMAIL
 
         context = ssl.create_default_context()
         with smtplib.SMTP(smtp_server, port) as server:
             server.ehlo()
             server.starttls(context=context)
-            server.login(sender_email, password)
+            server.login(SENDER_EMAIL, EMAIL_PW)
             server.send_message(msg)
 
     def write_last_row_to_disk(self, super_trend_df):
