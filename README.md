@@ -7,8 +7,8 @@ Module built to trade on customized [Bollinger Bands](https://en.wikipedia.org/w
 - `pip install -r requirements3.txt`
 
 ## Architecture
-A dataframe for an asset is first created locally, then uploaded to Mongo.
-A cron runs daily and generates a decision [No-Op, Buy, Sell] & sends it via email.
+A dataframe for an asset is first created locally, then uploaded to Mongo (initialization).
+A cron runs daily and generates a decision [No-Op, Buy, Sell] & sends the decision via email (trading).
 
 <b>Instantiating</b>:
 ```
