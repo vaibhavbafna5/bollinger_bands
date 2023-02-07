@@ -49,7 +49,7 @@ class SuperTrendRunner():
     - runner function that runs daily to generate message
     """
 
-    def __init__(self, ticker, json_path, debug_mode=False, multiplier=2.5, rolling_period=14, initial_amount=10000,):
+    def __init__(self, ticker, json_path='', debug_mode=False, multiplier=2.5, rolling_period=14, initial_amount=10000,):
         self.ticker = ticker
         self.json_path = json_path
         self.multiplier = multiplier

@@ -1,5 +1,5 @@
-## Bollinger Bands
-
+## Semi-Automated Trading with Bollinger Bands
+Module built to trade on customized [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets.
 
 
 ## Installation
