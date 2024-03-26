@@ -20,7 +20,8 @@ SENDER_EMAIL = os.environ.get('SENDER_EMAIL')
 MONGO_URL = os.environ.get('MONGO_URL')
 
 class NpEncoder(json.JSONEncoder):
-    # used to help dump data safely
+    """Used to dump data safely."""
+
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -38,6 +39,8 @@ class SuperTrendRunner():
     """
 
     def __init__(self, ticker, json_path='', debug_mode=False, multiplier=2.5, rolling_period=14, initial_amount=10000,):
+        """Initialize SuperTrendRunner."""
+
         self.ticker = ticker
         self.json_path = json_path
         self.multiplier = multiplier
@@ -46,7 +49,19 @@ class SuperTrendRunner():
         self.debug_mode = debug_mode
 
     def run(self):
-        # TODO: stop being lazy and clean up the runner
+        """
+        Main driver.
+        - generate super_trend dataframe
+        - chart it
+        - simulate the trades
+        - benchmark it against the S&P
+        - optionally write to disk
+
+        TODOS:
+        - clean this code up and make it more modular
+        - replace print statements with logging
+        """
+
         super_trend_df = self.generate_super_trend_for_ticker()
 
         start_date = super_trend_df.iloc[0].name
@@ -77,9 +92,9 @@ class SuperTrendRunner():
         return super_trend_df
 
     def generate_super_trend_for_ticker(self, period="6mo"):
+        """Wraps generation of the `bands`."""
+
         ticker_data = yf.Ticker(self.ticker).history(period=period)
-        
-        # calculate high low 
         ticker_data = self.generate_average_true_range(ticker_data)
         ticker_data = self.generate_basic_bands(ticker_data)
         ticker_data = self.generate_final_bands(ticker_data)
@@ -87,6 +102,11 @@ class SuperTrendRunner():
         return ticker_data
 
     def generate_average_true_range(self, ticker_data):
+        """
+        Generate average true range.
+        See more here: https://en.wikipedia.org/wiki/Average_true_range
+        """
+        
         # calculate high - low difference
         ticker_data['high-low'] = ticker_data['High'] - ticker_data['Low']
         
@@ -106,6 +126,8 @@ class SuperTrendRunner():
         return ticker_data
 
     def generate_basic_bands(self, ticker_data):
+        """Generate the basic bands based on the specified multiplier."""
+
         ticker_data['high_low_avg'] = (ticker_data['High'] + ticker_data['Low']) / 2
         ticker_data['lower_band'] = ticker_data['high_low_avg'] - (self.multiplier * ticker_data['average_true_range'])
         ticker_data['higher_band'] = ticker_data['high_low_avg'] + (self.multiplier * ticker_data['average_true_range'])
@@ -113,6 +135,8 @@ class SuperTrendRunner():
         return ticker_data
 
     def generate_final_bands(self, ticker_data):
+        """Generate final bands."""
+
         # initialization values 
         start_index = self.rolling_period
         
@@ -140,12 +164,10 @@ class SuperTrendRunner():
             else:
                 final_upper_band.append(previous_final_upper_band)
 
-
             if current_basic_lower_band > previous_final_lower_band or previous_close < previous_final_lower_band:
                 final_lower_band.append(current_basic_lower_band)
             else:
                 final_lower_band.append(previous_final_lower_band)
-
 
             current_final_upper_band = final_upper_band[-1]
             current_final_lower_band = final_lower_band[-1]
@@ -179,6 +201,8 @@ class SuperTrendRunner():
         return ticker_data
         
     def chart_super_trend(self, super_trend_df):
+        """Chart the super trend."""
+
         # get buy/sell lines 
         buys_line = []
         sells_line = []
@@ -267,6 +291,9 @@ class SuperTrendRunner():
         fig.show()
 
     def simulate_portfolio_on_strategy(self, super_trend_df):
+        """Simulate the portfolio holdings based on the super trend."""
+
+        # initialization
         portfolio_vals = [self.initial_amount]
         percent_differences = [0.0]
         buying = False
@@ -305,6 +332,8 @@ class SuperTrendRunner():
         return portfolio_vals, percent_differences
 
     def simulate_portfolio_strategy_with_slippage(self, super_trend_df, buy_slippage=1, sell_slippage=1):
+        """Reality isn't clean, simulate the pricing if the prices deviate from what was specified."""
+
         buying_periods = deque()
         current_day = 1
         previous_day = 0
@@ -364,6 +393,8 @@ class SuperTrendRunner():
         
 
     def benchmark_strategy(self, super_trend_df, benchmark_ticker='VTI'):
+        """Benchmark the super trend against simply holding VTI."""
+
         start_date = super_trend_df.iloc[0].name
         end_date = super_trend_df.iloc[-1].name
         print(f"start date: {start_date}")
@@ -467,6 +498,8 @@ class SuperTrendRunner():
         return benchmark_comparison_df, benchmark_df
 
     def visualize_benchmark_against_strategy(self, super_trend_df, benchmark_df):
+        """Chart the benchmarked strategy against the supertrend."""
+
         benchmark_line = go.Line(
             name='benchmark_VTI',
             x=benchmark_df.index,
@@ -493,15 +526,19 @@ class SuperTrendRunner():
         fig.show()
 
     def get_trade_decision(self, super_trend_df):
+        """Helper function to get buy/sell/no-op decision."""
+        
         last_trading_day = super_trend_df.iloc[-1]
         second_to_last_trading_day = super_trend_df.iloc[-2]
         
         # buy order
         if second_to_last_trading_day['buy_or_sell'] == False and last_trading_day['buy_or_sell'] == True:
             msg = f"Buy {self.ticker}"
+
         # sell order
         elif second_to_last_trading_day['buy_or_sell'] == True and last_trading_day['buy_or_sell'] == False:
             msg = f"Sell {self.ticker}"
+
         # maintain status quo
         else:
             msg = f"No-Op {self.ticker}"
@@ -510,6 +547,8 @@ class SuperTrendRunner():
         return msg + " " + last_trading_day_date
 
     def send_trade_decision_via_email(self, trade_decision):
+        """Send trade decision via email."""
+
         port = 587
         smtp_server = "smtp.gmail.com"
 
@@ -529,6 +568,8 @@ class SuperTrendRunner():
             server.send_message(msg)
 
     def write_last_row_to_disk(self, super_trend_df):
+        """Take the last row of the dataframe & write it to disk."""
+
         last_row = super_trend_df.iloc[-1]
 
         last_row_as_dict = last_row.to_dict()
@@ -541,6 +582,8 @@ class SuperTrendRunner():
         print(last_row_as_dict)
 
     def initialize_dataframe(self, period="6mo"):
+        """Initialize the dataframe w/ simulation of the portfolio holdings."""
+
         super_trend_df = self.generate_super_trend_for_ticker(period)
 
         start_date = super_trend_df.iloc[0].name
@@ -555,6 +598,7 @@ class SuperTrendRunner():
         return super_trend_df
 
     def write_initial_dataframe_to_mongo(self, super_trend_df):
+        """Upload dataframe to Mongo instance."""
         client = pymongo.MongoClient(MONGO_URL)
         db = client['super-trend']
 
@@ -569,6 +613,8 @@ class SuperTrendRunner():
         collection.insert_many(values)
 
     def execute_daily_trade_decision(self):
+        """Used for real(ish)time alerts."""
+
         super_trend_df = self.generate_daily_super_trend()
         trade_decision = self.get_trade_decision(super_trend_df)
         print("trade decision: ", trade_decision)
@@ -578,6 +624,8 @@ class SuperTrendRunner():
             self.send_trade_decision_via_email(trade_decision)
 
     def generate_daily_super_trend(self, period="6mo"):
+        """Generate the super trend for the day."""
+
         super_trend_df = self.generate_super_trend_for_ticker(period=period)
         portfolio_over_time, percent_differences = self.simulate_portfolio_on_strategy(super_trend_df)
         super_trend_df['portfolio_values'] = portfolio_over_time
@@ -586,6 +634,8 @@ class SuperTrendRunner():
         return super_trend_df
 
     def write_trade_decision_to_mongo(self, super_trend_df):
+        """Upload the day's decision to Mongo."""
+
         super_trend_df.reset_index(inplace=True)
         last_row = super_trend_df.iloc[-1].to_dict()
 
@@ -600,6 +650,8 @@ class SuperTrendRunner():
         collection.insert_one(last_row)
 
     def read_trade_data_from_mongo_to_dataframe(self):
+        """Read trade data from Mongo and put it into a dataframe."""
+
         client = pymongo.MongoClient(MONGO_URL)
         db = client['super-trend']
 
