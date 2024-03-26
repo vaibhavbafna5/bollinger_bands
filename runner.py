@@ -1,5 +1,6 @@
 from super_trend_lib import SuperTrendRunner
 
+# example of how to run supertrend on given assets, post-initialization
 runners = [
     SuperTrendRunner(ticker='PLTR', debug_mode=False),
     SuperTrendRunner(ticker='VGT', debug_mode=False),
