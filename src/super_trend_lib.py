@@ -402,6 +402,7 @@ class SuperTrendRunner():
 
         # get benchmark data & calculate portfolio change by simply holding
         benchmark_df = yf.Ticker(benchmark_ticker).history(period="max")
+        end_date = min(end_date, benchmark_df.iloc[-1].name)
         benchmark_df = benchmark_df[start_date:end_date]
 
         benchmark_percent_differences = [0.0]
@@ -441,12 +442,12 @@ class SuperTrendRunner():
         b_cumulative_return = b_cumulative_return * 100
 
         # annual return
-        num_years_invested = int(((end_date - start_date).days) / 365)
+        num_years_invested = float(((end_date - start_date).days) / 365)
         annual_return = ((total_return/principal) ** (1/num_years_invested)) - 1
         annual_return = annual_return * 100
 
         # benchmark annual return
-        num_years_invested = int(((end_date - start_date).days) / 365)
+        num_years_invested = float(((end_date - start_date).days) / 365)
         b_annual_return = ((b_total_return/b_principal) ** (1/num_years_invested)) - 1
         b_annual_return = b_annual_return * 100
         
