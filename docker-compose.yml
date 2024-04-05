@@ -1,0 +1,49 @@
+# version: '3'
+
+# services:
+#   my_service:
+#     build:
+#       context: .  # Adjusted context to the docker directory
+#       dockerfile: Dockerfile  # Path to your Dockerfile within the docker directory
+#     environment:
+#       - PUID=1000
+#       - PGID=1000
+#     ports:
+#       - "8080:8080"
+#     volumes:
+#       - ./src:/home/coder/project/src  # Mount your source code into the container
+
+#   mongo:
+#     image: mongo:latest
+#     container_name: mongodb
+#     volumes:
+#       - ./mongo-data:/data/db
+#     ports:
+#       - 27017:27017
+#     restart: unless-stopped
+
+
+version: '3'
+services:
+  code-server:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Specify your Dockerfile name if it's different
+    environment:
+      - PUID=1000
+      - PGID=1000
+    ports:
+      - "8080:8080"
+    volumes:
+      - ~/.ssh:/home/coder/.ssh
+      - ./src:/home/coder/project/src
+    command: ["--auth", "none", "/home/coder/project"]
+
+  mongo:
+    image: mongo:latest
+    container_name: mongodb
+    volumes:
+      - ./mongo-data:/data/db
+    ports:
+      - 27017:27017
+    restart: unless-stopped
