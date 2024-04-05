@@ -39,16 +39,6 @@ RUN sudo chown -R coder:coder /home/coder/project
 RUN git config --global user.email "vbafna@umich.edu" && \
     git config --global user.name "Vaibhav"
 
-# # Create or modify settings.json file
-# RUN mkdir -p ~/.local/share/code-server/Machine && \
-#     echo '{ "python.defaultInterpreterPath": "/home/coder/project/venv" }' > ~/.local/share/code-server/Machine/settings.json
-
-# # Set the user to coder
-# USER coder
-
-# # Start code-server
-# CMD ["--auth", "none", "/home/coder/project"]
-
 # Script to create settings.json if it doesn't exist
 RUN echo '#!/bin/bash\n\
 if [ ! -f ~/.local/share/code-server/Machine/settings.json ]; then\n\
