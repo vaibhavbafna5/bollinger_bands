@@ -37,7 +37,7 @@ This creates a SuperTrendRunner (obviously), but it's worth discussing the param
 - Benchmarks the strategy against holding a default ticker (normally VTI)
 - Visualizes portfolio earnings for the strategy & the benchmark
 
-Here's an example.
+There's an example of how to run the code in the `research` directory. To run it interactively, you can do so [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
 
 <br />
 
@@ -94,13 +94,15 @@ Breaking down the `Dockerfile` a bit further, there's some important things to n
 - Similarly, the `mongo-data` folder is mapped from the host to `/data/db` inside the container, ensuring MongoDB's data persists across container restarts
 - Important environment variables are stored in a `.env` file and ingested at container build time
 
-To build the containers, run `docker-compose up` and to tear them down, run `docker-compose down`.
+To build the containers, run `docker-compose up` and to tear them down, run `docker-compose down`. 
+
+You can view my deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
 
 ## Areas for Improvement
 In no particular order:
 
 - The code is currently structured to only work with a lookback period, but a custom time range would be useful, especially for backtesting in certain conditions.
-- I've been unable to figure out how to use Tailscale in an automated way while building the container. I have to enter my container, run `blah`, and then `tailscale up --authkey [blah]` to actually add the container into my Tailnet. Similarly, I have to do `tailscale funnel` to then expose the container to the broader Internet.
+- I've been unable to figure out how to use Tailscale in an automated way while building the container. I have to enter my container, run `sudo tailscaled --tun=userspace-networking --socks5-server=localhost:1055 &`, and then `sudo tailscale up --authkey [key]` to actually add the container into my Tailnet. Similarly, I have to run `tailscale funnel` to then expose the container to the broader Internet.
 - The code is almost certainly riddled with a few small bugs. Unit tests would give greater confidence in this implementation.
 - Typing is very useful, but currently only used in `utils.py`. It should be added to `super_trend_lib.py`.
 - Much of the code right now is very strongly tied to the `yfinance` API, a better approach would be adding a middle layer of abstraction to decouple the business logic from the data provider.
