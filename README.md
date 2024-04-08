@@ -25,7 +25,7 @@ This creates a SuperTrendRunner (obviously), but it's worth discussing the param
 - `multiplier` - [from Wikipedia](https://en.wikipedia.org/wiki/Bollinger_Bands#:~:text=Bollinger%20Bands%20consist,and%202%2C%20respectively.), this is the multiplier for the standard deviation or average true range over a certain period
 - `rolling_period` - rolling number of days to take the standard deviation or average true range
 - `initial_amount` - initial portfolio amount
-- `debug_mode` - flag to control whether to write to Mongo & send an email (set this to `False` for research-only activities)
+- `debug_mode` - flag to control whether to write to Mongo & send an email (set this to `True` for research-only activities)
 
 <br />
 
