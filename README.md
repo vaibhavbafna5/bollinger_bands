@@ -1,5 +1,5 @@
 ## Semi-Automated Trading with Bollinger Bands
-Module built to trade and research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets.
+Module built to trade and research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets. Check out an interactive deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
 
 
 ## Installation
@@ -37,7 +37,7 @@ This creates a SuperTrendRunner (obviously), but it's worth discussing the param
 - Benchmarks the strategy against holding a default ticker (normally VTI)
 - Visualizes portfolio earnings for the strategy & the benchmark
 
-There's an example of how to run the code in the `research` directory. To run it interactively, you can do so [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
+There's an example of how to run the code in the `research` directory. To run it interactively, you can do so in the `research` directory [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
 
 <br />
 
