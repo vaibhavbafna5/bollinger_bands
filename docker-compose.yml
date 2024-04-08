@@ -3,15 +3,19 @@ services:
   code-server:
     build:
       context: .
-      dockerfile: Dockerfile  # Specify your Dockerfile name if it's different
+      dockerfile: Dockerfile
     environment:
       - PUID=1000
       - PGID=1000
+      - MONGO_URL=${MONGO_URL}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - RECEIVER_EMAIL=${RECEIVER_EMAIL}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
     ports:
       - "8080:8080"
     volumes:
-      - ~/.ssh:/home/coder/.ssh
       - ./src:/home/coder/project/src
+      - ./research:/home/coder/project/research
     command: ["--auth", "none", "/home/coder/project"]
 
   mongo:
