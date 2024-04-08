@@ -40,6 +40,7 @@ This creates a SuperTrendRunner (obviously), but it's worth discussing the param
 <br />
 Here's an example.
 
+
 <br />
 
 <b>`generate_super_trend_for_ticker`</b>
