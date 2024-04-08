@@ -37,9 +37,7 @@ This creates a SuperTrendRunner (obviously), but it's worth discussing the param
 - Benchmarks the strategy against holding a default ticker (normally VTI)
 - Visualizes portfolio earnings for the strategy & the benchmark
 
-<br />
 Here's an example.
-
 
 <br />
 
