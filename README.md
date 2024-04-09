@@ -1,5 +1,5 @@
 ## Semi-Automated Trading with Bollinger Bands
-Module built to research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets & optionally monitor buy/sell lines to notify a user while persisting data to Mongo. Check out an interactive deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/). Instructions to replicate the deployment are included below.
+Module built to research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets, save & read data from Mongo, and monitor buy/sell lines to notify a user each day. Check out an interactive deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/). Instructions to replicate the deployment are included below.
 
 
 ## Installation
