@@ -37,35 +37,35 @@ class MongoInstance:
             logging.error("Failed to create MongoClient", e)
             raise RuntimeError("Couldn't create a MongoClient %s", e)
         
-    def write_dataframe_to_mongo(self, ticker: str, super_trend_df: pd.DataFrame):
+    def write_dataframe_to_mongo(self, ticker: str, bollinger_bands_df: pd.DataFrame):
         """Upload DataFrame for a given ticker to Mongo."""
 
-        db = self.mongo_client["super-trend"]
+        db = self.mongo_client["bollinger_bands"]
         if ticker not in db.list_collection_names():
             logging.warning(f"{ticker} is not a collection in DB")
         
         collection = db[ticker]
-        super_trend_df.reset_index(inplace=True)
-        values = list(super_trend_df.T.to_dict().values())
+        bollinger_bands_df.reset_index(inplace=True)
+        values = list(bollinger_bands_df.T.to_dict().values())
         collection.insert_many(values)
 
-    def write_last_row_to_mongo(self, ticker: str, super_trend_df: pd.DataFrame):
+    def write_last_row_to_mongo(self, ticker: str, bollinger_bands_df: pd.DataFrame):
         """Uploads entire DataFrame if it isn't in Mongo, otherwise appends last row."""
 
-        db = self.mongo_client["super-trend"]
+        db = self.mongo_client["bollinger_bands"]
         if ticker not in db.list_collection_names():
-            self.write_dataframe_to_mongo(ticker, super_trend_df)
+            self.write_dataframe_to_mongo(ticker, bollinger_bands_df)
             return
         
         collection = db[ticker]
-        super_trend_df.reset_index(inplace=True)
-        last_row = super_trend_df.iloc[-1].to_dict()
+        bollinger_bands_df.reset_index(inplace=True)
+        last_row = bollinger_bands_df.iloc[-1].to_dict()
         collection.insert_one(last_row)
 
     def read_dataframe_from_mongo(self, ticker: str) -> Optional[pd.DataFrame]:
         """Read ticker data from Mongo into DataFrame."""
 
-        db = self.mongo_client["super-trend"]
+        db = self.mongo_client["bollinger_bands"]
         if ticker not in db.list_collection_names():
             logging.error(f"{ticker} is not a collection in DB")
             return None

@@ -7,8 +7,8 @@ Module built to trade and research different flavors of [Bollinger Bands](https:
 - `pip install -r requirements3.txt`
 
 ## Architecture
-The main code lives in `src/super_trend_lib.py`, with some helper classes in `utils.py`.
-Within `super_trend_lib.py`, there's a few functions of note that are described further below (and in the comments).
+The main code lives in `src/bollinger_bands.py`, with some helper classes in `utils.py`.
+Within `bollinger_bands.py`, there's a few functions of note that are described further below (and in the comments).
 
 Within `utils.py`, there's two helper classes `MongoInstance` and `EmailSender`. `MongoInstance` wraps functionality to read and write dataframes for given tickers. `EmailSender` is a wrapper class to send emails from desired sender to desired recipient.
 
@@ -19,7 +19,7 @@ Not every function is described here, just the ones worthy of further explanatio
 
 <b>`init`</b>
 
-This creates a SuperTrendRunner (obviously), but it's worth discussing the parameters.
+This creates a `BollingerBands` object (duh), but it's worth discussing the parameters.
 
 - `ticker` - this is the desired asset to evaluate (e.g. `NVDA`, `TSLA`)
 - `multiplier` - [from Wikipedia](https://en.wikipedia.org/wiki/Bollinger_Bands#:~:text=Bollinger%20Bands%20consist,and%202%2C%20respectively.), this is the multiplier for the standard deviation or average true range over a certain period
@@ -31,8 +31,8 @@ This creates a SuperTrendRunner (obviously), but it's worth discussing the param
 
 <b>`explore(period="6mo)`</b>
 
-- This creates the super_trend dataframe for a given lookback period (defaults to 6mo)
-- Charts the super_trend along with key bands + buy/sell lines
+- This creates the `bollinger_bands_df` dataframe for a given lookback period (defaults to 6mo)
+- Charts the `bollinger_bands_df` along with key bands + buy/sell lines
 - Simulates the portfolio earnings using this strategy
 - Benchmarks the strategy against holding a default ticker (normally VTI)
 - Visualizes portfolio earnings for the strategy & the benchmark
@@ -41,7 +41,7 @@ There's an example of how to run the code in the `research` directory. To run it
 
 <br />
 
-<b>`generate_super_trend_for_ticker`</b>
+<b>`generate_bollinger_bands_for_ticker`</b>
 
 This function is the main driver for generating all the bands. Won't go too in-depth here as the code is the best documentation.
 
@@ -49,19 +49,18 @@ This function is the main driver for generating all the bands. Won't go too in-d
 
 <b>`simulate_portfolio_on_strategy`</b>
 
-Using the buy/sell points from the previous function, this calculates the percent changes day-to-day and the consequent portfolio values. The percent changes are used downstream to calculate volatility while the portfolio values are eventually charted in another function.
+Using the buy/sell points from the previous function, this calculates the percent changes day-to-day and the resulting portfolio values. The percent changes are used downstream to calculate volatility while the portfolio values are eventually charted in another function.
 
 <br />
 
 <b>`benchmark_strategy`</b>
 
-This benchmarks the super trend against simply holding another asset (defaults to `VTI`). Key metrics include:
+This benchmarks the Bollinger Band based trend-following strategy against simply holding another asset (defaults to `VTI`). Key metrics include:
 
 - `cumulative_return` - percentage total return from principal to total
 - `annual_return` - annualized return as a percentage (this is a bogus value if the lookback period is < 1 year)
 - `volatility` - standard deviation of percent differences
 - `sharpe_ratio` - performance relative to a risk-free asset (this metric could definitely use some tuning)
-- `calmar_ratio` - average annual rate of return divided by the max drawdown (this is currently implemented poorly as is because it technically is supposed to be calculated every month) 
 
 <br />
 
@@ -96,7 +95,7 @@ Breaking down the `Dockerfile` a bit further, there's some important things to n
 
 To build the containers, run `docker-compose up` and to tear them down, run `docker-compose down`. 
 
-You can view my deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
+You can view an example deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
 
 ## Areas for Improvement
 In no particular order:
@@ -104,7 +103,7 @@ In no particular order:
 - The code is currently structured to only work with a lookback period, but a custom time range would be useful, especially for backtesting in certain conditions.
 - I've been unable to figure out how to use Tailscale in an automated way while building the container. I have to enter my container, run `sudo tailscaled --tun=userspace-networking --socks5-server=localhost:1055 &`, and then `sudo tailscale up --authkey [key]` to actually add the container into my Tailnet. Similarly, I have to run `tailscale funnel` to then expose the container to the broader Internet.
 - The code is almost certainly riddled with a few small bugs. Unit tests would give greater confidence in this implementation.
-- Typing is very useful, but currently only used in `utils.py`. It should be added to `super_trend_lib.py`.
+- Typing is very useful, but currently only used in `utils.py`. It should be added to `bollinger_bands.py`.
 - Much of the code right now is very strongly tied to the `yfinance` API, a better approach would be adding a middle layer of abstraction to decouple the business logic from the data provider.
 - There's many flavors of Bollinger Bands to experiment with and a rigorous meta-analysis evaluating different combinations of the paramemters (lookback, asset classes, time ranges, markets, contrarian strategies) would be an interesting exercise.
 
