@@ -1,5 +1,5 @@
 ## Semi-Automated Trading with Bollinger Bands
-Module built to trade and research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets. Check out an interactive deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
+Module built to research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets & optionally monitor buy/sell lines to notify a user while persisting data to Mongo. Check out an interactive deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/). Instructions to replicate the deployment are included below.
 
 
 ## Installation
@@ -105,5 +105,5 @@ In no particular order:
 - The code is almost certainly riddled with a few small bugs. Unit tests would give greater confidence in this implementation.
 - Typing is very useful, but currently only used in `utils.py`. It should be added to `bollinger_bands.py`.
 - Much of the code right now is very strongly tied to the `yfinance` API, a better approach would be adding a middle layer of abstraction to decouple the business logic from the data provider.
-- There's many flavors of Bollinger Bands to experiment with and a rigorous meta-analysis evaluating different combinations of the paramemters (lookback, asset classes, time ranges, markets, contrarian strategies) would be an interesting exercise.
+- There's many types of Bollinger Bands to experiment with and a rigorous meta-analysis evaluating different combinations of the paramemters (lookback, asset classes, time ranges, markets, contrarian strategies) would be an interesting exercise.
 

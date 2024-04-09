@@ -38,7 +38,7 @@ async def my_async_task():
 
 async def run_at_specific_time():
     while True:
-        delay = seconds_until_target(hour=17, minute=0)
+        delay = seconds_until_target(hour=20, minute=52)
         print(f"Waiting {delay} seconds until the next run.")
 
         await asyncio.sleep(delay)
