@@ -6,6 +6,7 @@ import sys
 import yfinance as yf
 
 from collections import deque
+from datetime import datetime
 from dotenv import load_dotenv
 from IPython.display import display
 from utils import mongo_instance, email_sender
@@ -26,7 +27,7 @@ logging.basicConfig(
     ]
 )
 
-class BollingerBands():
+class BollingerBands:
     """"""
 
     def __init__(self, ticker, debug_mode=False, multiplier=2.5, rolling_period=14, initial_amount=10000,):
@@ -544,8 +545,39 @@ class BollingerBands():
         logging.info(f"Trade decision: {trade_decision}")
 
         if not self.debug_mode:
-            # upload data to Mongo
-            mongo_instance.write_last_row_to_mongo(self.ticker, bollinger_bands_df)
+            should_notify = False
+            
+            # notify if the last date is today & there hasn't been a notification yet
+            last_uploaded_row = mongo_instance.read_last_row_from_mongo(self.ticker)
+            last_current_row = bollinger_bands_df.iloc[-1]
 
-            # send email w/ trade decision
-            email_sender.send_email(SENDER_EMAIL, RECEIVER_EMAIL, trade_decision)
+            last_current_date = last_current_row.name.date()
+            today_date = datetime.today().date()
+
+            if last_uploaded_row:
+                last_uploaded_date = last_uploaded_row.Date.date()
+
+                # should notify if today's date is not equal to the last uploaded date and today's date equals the last current date from the dataframe
+                if today_date != last_uploaded_date and today_date == last_current_date:
+                    should_notify = True
+            
+            # only notify if it is the first upload and today's date is the last date in the dataframe
+            elif not last_uploaded_row and last_current_date == today_date:
+                import pdb;
+                pdb.set_trace()
+
+                should_notify = True
+
+            if should_notify:
+                logging.info(f"Attempting to notify for {self.ticker}")
+
+                # send email w/ trade decision
+                notified = email_sender.send_email(SENDER_EMAIL, RECEIVER_EMAIL, trade_decision)
+
+                # add the notified boolean to the row
+                last_index = bollinger_bands_df.index[-1]
+                bollinger_bands_df['notified'] = False
+                bollinger_bands_df.loc[last_index, 'notified'] = notified
+
+                # upload data to Mongo
+                mongo_instance.write_last_row_to_mongo(self.ticker, bollinger_bands_df)

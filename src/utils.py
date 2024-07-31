@@ -77,6 +77,23 @@ class MongoInstance:
         df = pd.DataFrame(list_cur)
         return df
 
+    def read_last_row_from_mongo(self, ticker: str) -> Optional[pd.Series]:
+        """Read the last row for a given ticker from MongoDB."""
+
+        db = self.mongo_client["bollinger_bands"]
+        if ticker not in db.list_collection_names():
+            logging.error(f"{ticker} is not a collection in DB")
+            return None
+        
+        collection = db[ticker]
+        cursor = collection.find().sort('_id', pymongo.DESCENDING).limit(1)
+        docs = [doc for doc in cursor]
+        if not docs:
+            return None
+
+        last_row = pd.Series(docs[0])
+        return last_row
+
  
 class EmailSender:
     """Wrapper class to blast emails from sender to receiver with a subject."""
@@ -86,7 +103,7 @@ class EmailSender:
         self.port: int = port
         self.smtp_server: str = smtp_server
 
-    def send_email(self, sender_email: str, receiver_email: str, subject: str, body: str="") -> None:
+    def send_email(self, sender_email: str, receiver_email: str, subject: str, body: str="") -> bool:
         """Send email from desired sender to desired receiver with subject and optional body."""
         msg = EmailMessage()
         msg.set_content(body)
@@ -104,6 +121,9 @@ class EmailSender:
                 server.send_message(msg)
         except Exception as e:
             logging.error(f"Failed to send email with error: {e}")
+            return False
+
+        return True
             
     
 mongo_instance = MongoInstance()
