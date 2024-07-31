@@ -1,5 +1,5 @@
 ## Semi-Automated Trading with Bollinger Bands
-Module built to research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets, save & read data from Mongo, and monitor buy/sell lines to notify a user each day. Check out an interactive deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/). Instructions to replicate the deployment are included below.
+Module built to research different flavors of [Bollinger Bands](https://en.wikipedia.org/wiki/Bollinger_Bands) for desired assets, save & read data from Mongo, and monitor buy/sell lines to notify a user each day. Check out an interactive deployed setup [here](https://code-server.ghoul-arctic.ts.net/). Instructions to replicate the deployment are included below.
 
 
 ## Installation
@@ -37,7 +37,7 @@ This creates a `BollingerBands` object (duh), but it's worth discussing the para
 - Benchmarks the strategy against holding a default ticker (normally VTI)
 - Visualizes portfolio earnings for the strategy & the benchmark
 
-There's an example of how to run the code in the `research` directory. To run it interactively, you can do so in the `research` directory [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
+There's an example of how to run the code in the `research` directory. To run it interactively, you can do so in the `research` directory [here](https://code-server.ghoul-arctic.ts.net/).
 
 <br />
 
@@ -79,10 +79,11 @@ Rather than paying for compute & storage, self-hosting was an appealing alternat
 - Able to serve as both research & production environment
 - Capable of interacting with a database that persists through application lifetimes
 
-Containerization naturally satisfied these requirements. The `Dockerfile` and `docker-compose.yml` builds two containers:
+Containerization naturally satisfied these requirements. The `Dockerfile` and `docker-compose.yml` builds three containers:
 
 - A MongoDB container to serve as a persistent data store for the tickers of interest
 - A [VSCode server](https://github.com/coder/code-server) to serve as a web-based IDE to support both research & deployment of daily asset monitoring
+- A [Tailscale sidecar container](https://tailscale.com/blog/docker-tailscale-guide) to add the VSCode server to my personal tailnet
 
 Breaking down the `Dockerfile` a bit further, there's some important things to note:
 
@@ -95,14 +96,13 @@ Breaking down the `Dockerfile` a bit further, there's some important things to n
 
 To build the containers, run `docker-compose up` and to tear them down, run `docker-compose down`. 
 
-You can view an example deployed setup [here](https://d6ec23e9bd45.ghoul-arctic.ts.net/).
+You can view an example deployed setup [here](https://code-server.ghoul-arctic.ts.net/).
 
 ## Areas for Improvement
 In no particular order:
 
 - The code is currently structured to only work with a lookback period, but a custom time range would be useful, especially for backtesting in certain conditions.
-- I've been unable to figure out how to use Tailscale in an automated way while building the container. I have to enter my container, run `sudo tailscaled --tun=userspace-networking --socks5-server=localhost:1055 &`, and then `sudo tailscale up --authkey [key]` to actually add the container into my Tailnet. Similarly, I have to run `tailscale funnel` to then expose the container to the broader Internet.
-- The code is almost certainly riddled with a few small bugs. Unit tests would give greater confidence in this implementation.
+- Some level of automated testing.
 - Typing is very useful, but currently only used in `utils.py`. It should be added to `bollinger_bands.py`.
 - Much of the code right now is very strongly tied to the `yfinance` API, a better approach would be adding a middle layer of abstraction to decouple the business logic from the data provider.
 - There's many types of Bollinger Bands to experiment with and a rigorous meta-analysis evaluating different combinations of the paramemters (lookback, asset classes, time ranges, markets, contrarian strategies) would be an interesting exercise.
