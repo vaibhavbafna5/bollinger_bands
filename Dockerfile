@@ -25,9 +25,6 @@ RUN sudo /home/coder/project/venv/bin/pip install -r requirements3.txt
 RUN sudo /home/coder/project/venv/bin/pip install ipykernel
 RUN sudo /home/coder/project/venv/bin/python -m ipykernel install --user --name=project_venv
 
-# Install tailscale
-RUN sudo curl -fsSL https://tailscale.com/install.sh | sh
-
 # Install VS Code extensions
 RUN code-server --install-extension ms-python.python && \
     code-server --install-extension ms-toolsai.jupyter
